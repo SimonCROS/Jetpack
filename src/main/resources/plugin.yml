@@ -1,0 +1,9 @@
+ name: Jetpack
+ version: 0.0.1
+ description: Jetpack !
+ author: SeaMoon15
+ main: fr.seamoon.jetpack.Jetpack
+ depend: [ProtocolLib]
+ commands:
+   jetpack:
+      description: Spawn a jetpack !
