@@ -54,7 +54,7 @@ public class OnFall implements Listener {
 		int emptyBars = bars - redbars;
 		
 		ItemMeta meta = e.getItem().getItemMeta();
-		meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Fuel : " + ChatColor.GOLD + "100/100"}));
+		meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Fuel : " + ChatColor.GOLD + Math.round(e.getFuel()) + "/100"}));
 		e.getItem().setItemMeta(meta);
 		
 		String message = "§4" + new String(new char[redbars]).replace("\0", "|") + "§f" + new String(new char[emptyBars]).replace("\0", "|");
