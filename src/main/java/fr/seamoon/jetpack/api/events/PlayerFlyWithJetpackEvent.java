@@ -1,5 +1,7 @@
 package fr.seamoon.jetpack.api.events;
 
+import java.math.BigDecimal;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -16,11 +18,11 @@ public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 	private Item jetpack;
 	private Location from;
 	private Vector velocity;
-	private double fuel;
+	private float fuel;
 	private ItemStack item;
 	private static final HandlerList handlers = new HandlerList();
 
-	public PlayerFlyWithJetpackEvent(Player p, Item vehicle, ItemStack item, Location location, Vector to, double fuel) {
+	public PlayerFlyWithJetpackEvent(Player p, Item vehicle, ItemStack item, Location location, Vector to, float fuel) {
 		this.player = p;
 		this.jetpack = vehicle;
 		this.from = location;
@@ -68,12 +70,13 @@ public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 		this.velocity = velocity;
 	}
 
-	public double getFuel() {
+	public float getFuel() {
 		return fuel;
 	}
 
-	public void setFuel(double fuel) {
-		this.fuel = fuel;
+	public void setFuel(float fuel) {
+		if (fuel < 0) fuel = 0;
+		this.fuel = new BigDecimal(fuel).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
 	}
 
 	public ItemStack getItem() {

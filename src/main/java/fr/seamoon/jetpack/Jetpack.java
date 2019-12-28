@@ -47,7 +47,7 @@ public class Jetpack extends JavaPlugin {
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Jetpack");
 		meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Fuel : " + ChatColor.GOLD + "100/100"}));
 		PersistentDataContainer data = meta.getPersistentDataContainer();
-		data.set(new NamespacedKey(this, "power"), PersistentDataType.DOUBLE, 100d);
+		data.set(new NamespacedKey(this, "power"), PersistentDataType.FLOAT, 100f);
 		item.setItemMeta(meta);
 		jetpackItem = item;
 	}
@@ -83,7 +83,9 @@ public class Jetpack extends JavaPlugin {
 						Vector to = vehicle.getVelocity().clone();
 						boolean modif = false;
 						if (z > 0 && !vehicle.isOnGround()) {
-							Vector v = to.clone().add(p.getEyeLocation().getDirection().normalize().multiply(0.2)).normalize().multiply(0.8);
+							Vector direction = p.getEyeLocation().getDirection();
+							direction.setY(0);
+							Vector v = to.clone().add(direction.normalize().multiply(0.2)).normalize().multiply(0.8);
 							to.setZ(v.getZ());
 							to.setX(v.getX());
 							modif = true;
@@ -114,7 +116,6 @@ public class Jetpack extends JavaPlugin {
 			}
             @Override
             public void onPacketSending(PacketEvent e) {
-            	
             }
         });
 	}
@@ -144,7 +145,7 @@ public class Jetpack extends JavaPlugin {
 			ItemMeta meta = item.getItemMeta();
 			PersistentDataContainer data = meta.getPersistentDataContainer();
 			
-			if (data.has(new NamespacedKey(this, "power"), PersistentDataType.DOUBLE)) {
+			if (data.has(new NamespacedKey(this, "power"), PersistentDataType.FLOAT)) {
 				return true;
 			}
 		}
@@ -156,12 +157,12 @@ public class Jetpack extends JavaPlugin {
 	 * @param jetpack
 	 * @return -1 if the item is not valid, else, the fuel level
 	 */
-	public double getJetpackFuel(ItemStack jetpack) {
+	public float getJetpackFuel(ItemStack jetpack) {
 		if (isJetpackItem(jetpack)) {
 			ItemMeta meta = jetpack.getItemMeta();
 			PersistentDataContainer data = meta.getPersistentDataContainer();
 
-			return data.get(new NamespacedKey(this, "power"), PersistentDataType.DOUBLE);
+			return data.get(new NamespacedKey(this, "power"), PersistentDataType.FLOAT);
 		}
 		return -1;
 	}
@@ -171,11 +172,11 @@ public class Jetpack extends JavaPlugin {
 	 * @param jetpack
 	 * @param fuel is an integer greater or equal than 0
 	 */
-	public void setJetpackFuel(ItemStack jetpack, double fuel) {
+	public void setJetpackFuel(ItemStack jetpack, float fuel) {
 		if (fuel >= 0 && isJetpackItem(jetpack)) {
 			ItemMeta meta = jetpack.getItemMeta();
 			PersistentDataContainer data = meta.getPersistentDataContainer();
-			data.set(new NamespacedKey(this, "power"), PersistentDataType.DOUBLE, fuel);
+			data.set(new NamespacedKey(this, "power"), PersistentDataType.FLOAT, fuel);
 			jetpack.setItemMeta(meta);
 		}
 	}

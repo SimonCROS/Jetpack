@@ -1,5 +1,7 @@
 package fr.seamoon.jetpack.listeners;
 
+import java.util.Arrays;
+
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -7,10 +9,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.spigotmc.event.entity.EntityDismountEvent;
 
 import fr.seamoon.jetpack.Jetpack;
 import fr.seamoon.jetpack.api.events.PlayerFlyWithJetpackEvent;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -48,12 +52,18 @@ public class OnFall implements Listener {
 		int bars = 100;
 		int redbars = (int) Math.round(bars * e.getFuel() / 100);
 		int emptyBars = bars - redbars;
+		
+		ItemMeta meta = e.getItem().getItemMeta();
+		meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Fuel : " + ChatColor.GOLD + "100/100"}));
+		e.getItem().setItemMeta(meta);
+		
 		String message = "§4" + new String(new char[redbars]).replace("\0", "|") + "§f" + new String(new char[emptyBars]).replace("\0", "|");
 		p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
+
 		if (e.getFuel() <= 0) {
 			e.setCancelled(true);
 		} else {
-			e.setFuel(e.getFuel() - 0.1);
+			e.setFuel(e.getFuel() - 0.1f);
 		}
 	}
 }
