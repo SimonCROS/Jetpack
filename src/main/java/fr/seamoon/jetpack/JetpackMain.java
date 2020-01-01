@@ -2,9 +2,6 @@ package fr.seamoon.jetpack;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -19,7 +16,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.FurnaceRecipe;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
@@ -46,7 +42,6 @@ public class JetpackMain extends JavaPlugin {
 	private static JetpackMain instance;
 	
 	public ItemStack gasCylinderItem;
-	public ItemStack jetpackItem;
 	
 	@Override
 	public void onLoad() {
@@ -64,7 +59,7 @@ public class JetpackMain extends JavaPlugin {
 			data.set(new NamespacedKey(this, "left"), PersistentDataType.FLOAT, -1f);
 			data.set(new NamespacedKey(this, "right"), PersistentDataType.FLOAT, -1f);
 			item.setItemMeta(meta);
-			jetpackItem = item;
+			JetpackUtils.setJetpackItem(item);
 		}
 		{
 			ItemStack item = new ItemStack(Material.GLASS_BOTTLE);
@@ -89,8 +84,7 @@ public class JetpackMain extends JavaPlugin {
 		pm.registerEvents(new OnFall(), this);
 		getCommand("jetpack").setExecutor(new JetpackCommand());
 		
-		
-		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "jetpack"), jetpackItem);
+		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "jetpack"), JetpackUtils.jetpackItem);
 		recipe.shape("*b*", "ifi");
 		recipe.setIngredient('*', Material.AIR);
 		recipe.setIngredient('b', Material.BLAZE_ROD);
@@ -108,9 +102,8 @@ public class JetpackMain extends JavaPlugin {
 				Player p = e.getPlayer();
 				if (p.isInsideVehicle() && p.getVehicle() instanceof Item) {
 					Item vehicle = (Item) p.getVehicle();
-					if (vehicle.getType() == EntityType.DROPPED_ITEM && vehicle.getCustomName().equals("Jetpack") && isJetpackItem(p.getInventory().getItemInOffHand())) {
-						ItemStack item = p.getInventory().getItemInOffHand();
-						
+					JetpackItem item;
+					if (vehicle.getType() == EntityType.DROPPED_ITEM && vehicle.getCustomName().equals("Jetpack") && (item = JetpackItem.fromItemStack(p.getInventory().getItemInOffHand())) != null) {
 						if (item.getAmount() > 1) {
 							p.sendMessage(ChatColor.RED + "You can't use jetpack with a stack of items.");
 							return;
@@ -138,12 +131,10 @@ public class JetpackMain extends JavaPlugin {
 							plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 								@Override
 								public void run() {
-									PlayerFlyWithJetpackEvent event = new PlayerFlyWithJetpackEvent(p, vehicle, item, vehicle.getLocation(), to, getJetpackLeftGasLevel(item), getJetpackRightGasLevel(item));
+									PlayerFlyWithJetpackEvent event = new PlayerFlyWithJetpackEvent(p, vehicle, item, vehicle.getLocation(), to);
 									Bukkit.getPluginManager().callEvent(event);
 									
 									Vector finalVelocity = event.getVelocity();
-									setJetpackLeftGasLevel(item, event.getLeftGasLevel());
-									setJetpackRightGasLevel(item, event.getRightGasLevel());
 									if (!event.isCancelled()) {
 										vehicle.setVelocity(finalVelocity);
 									}
@@ -176,77 +167,6 @@ public class JetpackMain extends JavaPlugin {
 		newItem.setCustomNameVisible(false);
 		newItem.setVelocity(velocity);
 		newItem.addPassenger(p);
-	}
-	
-	/**
-	 * Return if passed item is a valid jetpack
-	 * @param item
-	 */
-	public boolean isJetpackItem(ItemStack item) {
-		if (item != null && item.getType().equals(jetpackItem.getType()) && item.getItemMeta().getDisplayName().equals(jetpackItem.getItemMeta().getDisplayName())) {
-			ItemMeta meta = item.getItemMeta();
-			PersistentDataContainer data = meta.getPersistentDataContainer();
-			
-			if (data.has(new NamespacedKey(this, "left"), PersistentDataType.FLOAT) && data.has(new NamespacedKey(this, "right"), PersistentDataType.FLOAT)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	/**
-	 * Return the gasLevel of the jetpack
-	 * @param jetpack
-	 * @return -1 if the item is not valid, else, the gasLevel level
-	 */
-	public float getJetpackRightGasLevel(ItemStack jetpack) {
-		return getJetpackGasLevel(jetpack, "right");
-	}
-	
-	/**
-	 * Set jetpack gasLevel to the passed value "gasLevel"
-	 * @param jetpack
-	 * @param gasLevel is an integer greater or equal than 0
-	 */
-	public void setJetpackRightGasLevel(ItemStack jetpack, float gasLevel) {
-		setJetpackGasLevel(jetpack, gasLevel, "right");
-	}
-	
-	/**
-	 * Return the gasLevel of the jetpack
-	 * @param jetpack
-	 * @return -1 if the item is not valid, else, the gasLevel level
-	 */
-	public float getJetpackLeftGasLevel(ItemStack jetpack) {
-		return getJetpackGasLevel(jetpack, "left");
-	}
-	
-	/**
-	 * Set jetpack gasLevel to the passed value "gasLevel"
-	 * @param jetpack
-	 * @param gasLevel is an integer greater or equal than 0
-	 */
-	public void setJetpackLeftGasLevel(ItemStack jetpack, float gasLevel) {
-		setJetpackGasLevel(jetpack, gasLevel, "left");
-	}
-
-	private float getJetpackGasLevel(ItemStack jetpack, String side) {
-		if (isJetpackItem(jetpack)) {
-			ItemMeta meta = jetpack.getItemMeta();
-			PersistentDataContainer data = meta.getPersistentDataContainer();
-
-			return data.get(new NamespacedKey(this, side), PersistentDataType.FLOAT);
-		}
-		return -1;
-	}
-
-	private void setJetpackGasLevel(ItemStack jetpack, float gasLevel, String side) {
-		if ((gasLevel >= 0 || gasLevel == -1) && isJetpackItem(jetpack)) {
-			ItemMeta meta = jetpack.getItemMeta();
-			PersistentDataContainer data = meta.getPersistentDataContainer();
-			data.set(new NamespacedKey(this, side), PersistentDataType.FLOAT, gasLevel);
-			jetpack.setItemMeta(meta);
-		}
 	}
 
 	/**
@@ -314,129 +234,5 @@ public class JetpackMain extends JavaPlugin {
 			}
 		}
 		return false;
-	}
-	
-	Map<Material, Integer> gasPowerLevelColor = new HashMap<Material, Integer>() {
-		private static final long serialVersionUID = 1L;
-		{
-	    put(Material.BLACK_STAINED_GLASS_PANE, 0);
-	    put(Material.RED_STAINED_GLASS_PANE, 15);
-	    put(Material.ORANGE_STAINED_GLASS_PANE, 40);
-	    put(Material.YELLOW_STAINED_GLASS_PANE, 75);
-	    put(Material.LIME_STAINED_GLASS_PANE, 100);
-	}};
-
-	/**
-	 * Create inventory from jetpack item
-	 * @param jetpack
-	 * @return the inventory
-	 */
-	public Inventory buildJetpackInventory(Player p, ItemStack jetpack) {
-		Inventory inventory = Bukkit.createInventory(p, 3*9, ChatColor.LIGHT_PURPLE + "Jetpack");
-		inventory.setMaxStackSize(1);
-		
-		rebuildJetpackInventory(inventory, jetpack);
-
-		return inventory;
-	}
-	
-	/**
-	 * Update inventory from jetpack item
-	 * @param jetpack
-	 */
-	public void rebuildJetpackInventory(Inventory inventory, ItemStack jetpack) {
-		inventory.clear();
-		if (isJetpackItem(jetpack)) {
-			ItemMeta emptyMeta = Bukkit.getItemFactory().getItemMeta(Material.GLASS_PANE);
-			emptyMeta.setDisplayName(" ");
-			
-			ItemStack middle = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
-			middle.setItemMeta(emptyMeta);
-			for (int line = 0; line < 3; line++) {
-				for (int index = 0; index < 3; index++) {
-					inventory.setItem(line * 9 + index * 4, middle);
-				}
-			}
-			float leftPower = getJetpackLeftGasLevel(jetpack);
-			float rightPower = getJetpackRightGasLevel(jetpack);
-
-			ItemStack left = new ItemStack(Material.GLASS_PANE);
-			int lLast = 101;
-			for (Entry<Material, Integer> material : gasPowerLevelColor.entrySet()) {
-				if (material.getValue() < lLast && leftPower <= material.getValue()) {
-					left = new ItemStack(material.getKey());
-					lLast = material.getValue();
-				}
-			}
-			left.setItemMeta(emptyMeta);
-
-			ItemStack right = new ItemStack(Material.GLASS_PANE);
-			int rLast = 101;
-			for (Entry<Material, Integer> material : gasPowerLevelColor.entrySet()) {
-				if (material.getValue() < rLast && rightPower <= material.getValue()) {
-					right = new ItemStack(material.getKey());
-					rLast = material.getValue();
-				}
-			}
-			right.setItemMeta(emptyMeta);
-
-			for (int line = 0; line < 3; line++) {
-				for (int index = 1; index < 4; index++) {
-					if (line == 1 && index == 2) continue;
-					inventory.setItem(line * 9 + index, left);
-				}
-			}
-			for (int line = 0; line < 3; line++) {
-				for (int index = 5; index < 8; index++) {
-					if (line == 1 && index == 6) continue;
-					inventory.setItem(line * 9 + index, right);
-				}
-			}
-
-			ItemStack rightItem = new ItemStack(Material.GLASS_BOTTLE);
-			ItemMeta rightItemMeta = rightItem.getItemMeta();
-			rightItemMeta.setDisplayName(ChatColor.RED + "Bouteille de gaz (ouverte)");
-			rightItem.setItemMeta(rightItemMeta);
-			setUnique(rightItem);
-			
-			if (leftPower >= 0) {
-				ItemStack item = new ItemStack(Material.GLASS_BOTTLE);
-				ItemMeta meta = item.getItemMeta();
-				meta.setDisplayName(ChatColor.RED + "Bouteille de gaz (ouverte)");
-				meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Puissance : " + ChatColor.GOLD + (leftPower <= 0 ? "vide" : (Math.round(leftPower) + "/100"))}));
-				item.setItemMeta(meta);
-				setUnique(item);
-
-				inventory.setItem(11, item);
-			}
-			
-			if (rightPower >= 0) {
-				ItemStack item = new ItemStack(Material.GLASS_BOTTLE);
-				ItemMeta meta = item.getItemMeta();
-				meta.setDisplayName(ChatColor.RED + "Bouteille de gaz (ouverte)");
-				meta.setLore(Arrays.asList(new String[]{ChatColor.YELLOW + "Puissance : " + ChatColor.GOLD + (rightPower <= 0 ? "vide" : (Math.round(rightPower) + "/100"))}));
-				item.setItemMeta(meta);
-				setUnique(item);
-
-				inventory.setItem(15, item);
-			}
-		}
-	}
-
-	/**
-	 * Actualise lore of item
-	 * @param item
-	 */
-	public void actualiseItem(ItemStack item) {
-		if (isJetpackItem(item)) {
-			float left = getJetpackLeftGasLevel(item);
-			float right = getJetpackRightGasLevel(item);
-			ItemMeta meta = item.getItemMeta();
-			meta.setLore(Arrays.asList(new String[] {
-					(ChatColor.YELLOW + "Bouteille gauche : " + ChatColor.GOLD + (left <= 0 ? "vide" : (Math.round(left) + "/100"))),
-					(ChatColor.YELLOW + "Bouteille droite : " + ChatColor.GOLD + (right <= 0 ? "vide" : (Math.round(right) + "/100"))),
-			}));
-			item.setItemMeta(meta);
-		}
 	}
 }

@@ -1,15 +1,14 @@
 package fr.seamoon.jetpack.api.events;
 
-import java.math.BigDecimal;
-
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+
+import fr.seamoon.jetpack.JetpackItem;
 
 public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 
@@ -18,19 +17,15 @@ public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 	private Item jetpack;
 	private Location from;
 	private Vector velocity;
-	private float leftGas;
-	private float rightGas;
-	private ItemStack item;
+	private JetpackItem item;
 	private static final HandlerList handlers = new HandlerList();
 
-	public PlayerFlyWithJetpackEvent(Player p, Item vehicle, ItemStack item, Location location, Vector to, float leftGas, float rightGas) {
+	public PlayerFlyWithJetpackEvent(Player p, Item vehicle, JetpackItem item, Location location, Vector to) {
 		this.player = p;
 		this.jetpack = vehicle;
 		this.from = location;
 		this.item = item;
 		this.setVelocity(to);
-		this.setLeftGasLevel(leftGas);
-		this.setRightGasLevel(rightGas);
 	}
 	 
 	@Override
@@ -72,25 +67,7 @@ public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 		this.velocity = velocity;
 	}
 
-	public float getLeftGasLevel() {
-		return leftGas;
-	}
-
-	public void setLeftGasLevel(float leftGas) {
-		if (leftGas < 0) leftGas = 0;
-		this.leftGas = new BigDecimal(leftGas).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
-	}
-
-	public float getRightGasLevel() {
-		return rightGas;
-	}
-
-	public void setRightGasLevel(float rightGas) {
-		if (rightGas < 0) rightGas = 0;
-		this.rightGas = new BigDecimal(rightGas).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
-	}
-
-	public ItemStack getItem() {
+	public JetpackItem getItem() {
 		return item;
 	}
 }
