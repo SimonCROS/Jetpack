@@ -40,7 +40,7 @@ public class OnFall implements Listener {
 			main.spawnJetpack(p, p.getVelocity());
 		} else if ((item = JetpackItem.fromItemStack(e.getMainHandItem())) != null) {
 			main.killJetpack(p);
-			item.actualise();
+			item.actualise(true);
 		}
 	}
 
@@ -72,6 +72,7 @@ public class OnFall implements Listener {
 			item.setRightGasLevel(rightLevel - 0.1f);
 			item.setLeftGasLevel(leftLevel - 0.1f);
 		}
+		item.actualise(false);
 	}
 	
 	@EventHandler
@@ -83,8 +84,8 @@ public class OnFall implements Listener {
 				p.sendMessage(ChatColor.RED + "You can't use jetpack with a stack of items.");
 				return;
 			}
-			if (!main.isUnique(item)) {
-				main.setUnique(item);
+			if (!main.isUnique(item.getItem())) {
+				main.setUnique(item.getItem());
 			}
 			
 			p.openInventory(item.buildInventory(p));
@@ -172,7 +173,7 @@ public class OnFall implements Listener {
 			Player p = (Player) e.getPlayer();
 			JetpackItem item;
 			if (e.getView().getTitle().equals(ChatColor.LIGHT_PURPLE + "Jetpack") && (item = JetpackItem.fromItemStack(p.getInventory().getItemInMainHand())) != null) {
-				item.actualise();
+				item.actualise(true);
 			}
 		}
 	}

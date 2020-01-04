@@ -17,10 +17,31 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-public class JetpackItem extends ItemStack {
+public class JetpackItem {
 	
 	private static JetpackMain main = JetpackMain.getInstance();
-
+	private final ItemStack i;
+	
+	public int getAmount() {
+		return i.getAmount();
+	}
+	
+	public ItemMeta getItemMeta() {
+		return i.getItemMeta();
+	}
+	
+	public boolean setItemMeta(ItemMeta itemMeta) {
+		return i.setItemMeta(itemMeta);
+	}
+	
+	public Material getType() {
+		return i.getType();
+	}
+	
+	public ItemStack getItem() {
+		return i;
+	}
+	
 	/**
 	 * Return new jetpack item from itemstack
 	 * @param item
@@ -38,7 +59,7 @@ public class JetpackItem extends ItemStack {
 	 * @param item
 	 */
 	public JetpackItem(ItemStack item) {
-		super(item);
+		i = item;
 	}
 	
 	/**
@@ -91,7 +112,7 @@ public class JetpackItem extends ItemStack {
 			ItemMeta meta = getItemMeta();
 			PersistentDataContainer data = meta.getPersistentDataContainer();
 			data.set(new NamespacedKey(main, side), PersistentDataType.FLOAT, gasLevel);
-			setItemMeta(meta);
+			i.setItemMeta(meta);
 		}
 	}
 
@@ -199,17 +220,28 @@ public class JetpackItem extends ItemStack {
 	}
 
 	/**
-	 * Actualise lore of item
-	 * @param item
+	 * Actualise item
+	 * @param force
 	 */
-	public void actualise() {
+	public void actualise(boolean force) {
+		ItemMeta meta = getItemMeta();
 		float left = getLeftGasLevel();
 		float right = getRightGasLevel();
-		ItemMeta meta = getItemMeta();
-		meta.setLore(Arrays.asList(new String[] {
-				(ChatColor.YELLOW + "Bouteille gauche : " + ChatColor.GOLD + (left <= 0 ? "vide" : (Math.round(left) + "/100"))),
-				(ChatColor.YELLOW + "Bouteille droite : " + ChatColor.GOLD + (right <= 0 ? "vide" : (Math.round(right) + "/100"))),
-		}));
-		setItemMeta(meta);
+		if (force) {
+			meta.setLore(Arrays.asList(new String[] {
+					(ChatColor.YELLOW + "Bouteille gauche : " + ChatColor.GOLD + (left <= 0 ? "vide" : (Math.round(left) + "/100"))),
+					(ChatColor.YELLOW + "Bouteille droite : " + ChatColor.GOLD + (right <= 0 ? "vide" : (Math.round(right) + "/100"))),
+			}));
+		}
+		int leftSideModel = (int) Math.ceil(left*5/100);
+		int rightSideModel = (int) Math.ceil(right*5/100);
+		int model = Integer.parseInt(leftSideModel + "" + rightSideModel);
+		
+		// Model data doesn't support 0
+		if (model == 0) model = 100;
+		if (force || meta.getCustomModelData() != model) {
+			meta.setCustomModelData(model);
+			i.setItemMeta(meta);
+		}
 	}
 }

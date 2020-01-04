@@ -55,6 +55,7 @@ public class JetpackMain extends JavaPlugin {
 					(ChatColor.YELLOW + "Bouteille gauche : " + ChatColor.GOLD + "vide"),
 					(ChatColor.YELLOW + "Bouteille droite : " + ChatColor.GOLD + "vide")
 					}));
+			meta.setCustomModelData(1);
 			PersistentDataContainer data = meta.getPersistentDataContainer();
 			data.set(new NamespacedKey(this, "left"), PersistentDataType.FLOAT, -1f);
 			data.set(new NamespacedKey(this, "right"), PersistentDataType.FLOAT, -1f);
@@ -84,7 +85,7 @@ public class JetpackMain extends JavaPlugin {
 		pm.registerEvents(new OnFall(), this);
 		getCommand("jetpack").setExecutor(new JetpackCommand());
 		
-		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "jetpack"), JetpackUtils.jetpackItem);
+		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "jetpack"), JetpackUtils.jetpackItem.getItem());
 		recipe.shape("*b*", "ifi");
 		recipe.setIngredient('*', Material.AIR);
 		recipe.setIngredient('b', Material.BLAZE_ROD);
