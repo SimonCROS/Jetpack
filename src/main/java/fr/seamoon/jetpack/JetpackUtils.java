@@ -7,28 +7,30 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 public class JetpackUtils {
-	
+
 	private static JetpackMain main = JetpackMain.getInstance();
 
 	public static JetpackItem jetpackItem;
-	
+
 	/**
 	 * Return if passed item is a valid jetpack
+	 * 
 	 * @param item
 	 */
 	public static boolean isJetpackItem(ItemStack item) {
-		if (item != null && item.getType().equals(jetpackItem.getType()) && item.getItemMeta().getDisplayName().equals(jetpackItem.getItemMeta().getDisplayName())) {
+		if (item != null && item.getType().equals(jetpackItem.getType())
+				&& item.getItemMeta().getDisplayName().equals(jetpackItem.getItemMeta().getDisplayName())) {
 			ItemMeta meta = item.getItemMeta();
 			PersistentDataContainer data = meta.getPersistentDataContainer();
-			
-			if (data.has(new NamespacedKey(main, "left"), PersistentDataType.FLOAT) && data.has(new NamespacedKey(main, "right"), PersistentDataType.FLOAT)) {
+			if (data.has(new NamespacedKey(main, "left"), PersistentDataType.FLOAT)
+					&& data.has(new NamespacedKey(main, "right"), PersistentDataType.FLOAT)) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public static void setJetpackItem(ItemStack item) {
+	public static void setJetpackItem(ItemStackLib item) {
 		jetpackItem = new JetpackItem(item);
 	}
 

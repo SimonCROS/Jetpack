@@ -27,24 +27,24 @@ public class PlayerFlyWithJetpackEvent extends Event implements Cancellable {
 		this.item = item;
 		this.setVelocity(to);
 	}
-	 
+
 	@Override
 	public HandlerList getHandlers() {
-	    return handlers;
+		return handlers;
 	}
-	 
+
 	public static HandlerList getHandlerList() {
-	    return handlers;
+		return handlers;
 	}
 
 	@Override
 	public boolean isCancelled() {
-	    return this.isCancelled;
+		return this.isCancelled;
 	}
-	 
+
 	@Override
 	public void setCancelled(boolean cancelled) {
-	    this.isCancelled = cancelled;
+		this.isCancelled = cancelled;
 	}
 
 	public Player getPlayer() {
