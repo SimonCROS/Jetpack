@@ -7,11 +7,9 @@ import java.util.Date;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -24,7 +22,6 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.comphenix.protocol.PacketType;
@@ -34,9 +31,13 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 
-import fr.seamoon.jetpack.api.events.PlayerFlyWithJetpackEvent;
+import fr.seamoon.jetpack.api.events.JetpackPacketReciveEvent;
 import fr.seamoon.jetpack.commands.JetpackCommand;
-import fr.seamoon.jetpack.listeners.OnFall;
+import fr.seamoon.jetpack.listeners.Interract;
+import fr.seamoon.jetpack.listeners.InventoryAction;
+import fr.seamoon.jetpack.listeners.OnFly;
+import fr.seamoon.jetpack.listeners.OnJetpackPacketRecive;
+import fr.seamoon.jetpack.listeners.Security;
 
 public class JetpackMain extends JavaPlugin {
 
@@ -65,7 +66,11 @@ public class JetpackMain extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		PluginManager pm = Bukkit.getPluginManager();
-		pm.registerEvents(new OnFall(), this);
+		pm.registerEvents(new OnFly(), this);
+		pm.registerEvents(new Security(), this);
+		pm.registerEvents(new InventoryAction(), this);
+		pm.registerEvents(new Interract(), this);
+		pm.registerEvents(new OnJetpackPacketRecive(), this);
 		getCommand("jetpack").setExecutor(new JetpackCommand());
 
 		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "jetpack"), JetpackUtils.jetpackItem.getItem());
@@ -88,65 +93,21 @@ public class JetpackMain extends JavaPlugin {
 						Player p = e.getPlayer();
 						if (p.isInsideVehicle() && p.getVehicle() instanceof Item) {
 							Item vehicle = (Item) p.getVehicle();
-							vehicle.setFallDistance((float) vehicle.getVelocity().getY() * 8 * -1);
 							JetpackItem item;
 							if (vehicle.getType() == EntityType.DROPPED_ITEM
 									&& vehicle.getCustomName().equals("Jetpack") && (item = JetpackItem
 											.fromItemStack(p.getInventory().getItemInOffHand())) != null) {
-								if (item.getAmount() > 1) {
-									p.sendMessage(ChatColor.RED + "You can't use jetpack with a stack of items.");
-									return;
-								}
-
+								float x = e.getPacket().getFloat().read(0);
 								float z = e.getPacket().getFloat().read(1);
 								boolean jump = e.getPacket().getBooleans().read(0);
-								Vector to = vehicle.getVelocity().clone();
-								boolean modif = false;
-								if (z > 0 && !vehicle.isOnGround()) {
-									Vector direction = p.getEyeLocation().getDirection();
-									direction.setY(0);
-									Vector v = to.clone().add(direction.normalize().multiply(0.2)).normalize()
-											.multiply(0.8);
-									to.setZ(v.getZ());
-									to.setX(v.getX());
-									modif = true;
-								}
-								if (jump) {
-									to.setY(Math.min(0.6, to.getY() + 0.1));
-									p.getWorld().spawnParticle(Particle.REDSTONE, p.getLocation(), 10,
-											new Particle.DustOptions(Color.fromBGR(255, 255, 255), 1));
-
-									modif = true;
-								}
-								if (modif) {
-									plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-										@Override
-										public void run() {
-											PlayerFlyWithJetpackEvent event = new PlayerFlyWithJetpackEvent(p, vehicle,
-													item, vehicle.getLocation(), to);
-											Bukkit.getPluginManager().callEvent(event);
-
-											Vector finalVelocity = event.getVelocity();
-											if (!event.isCancelled()) {
-												item.setFlying(true);
-												item.actualise(false);
-												vehicle.setVelocity(finalVelocity);
-												long time = setUnique(item.getItem());
-												BukkitRunnable flyinganimation = new BukkitRunnable() {
-
-													@Override
-													public void run() {
-														if (time == getUniqueId(item.getItem())) {
-															item.setFlying(false);
-															item.actualise(false);
-														}
-													}
-												};
-												flyinganimation.runTaskLater(instance, 3);
-											}
-										}
-									});
-								}
+								plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+									@Override
+									public void run() {
+										JetpackPacketReciveEvent event = new JetpackPacketReciveEvent(p, vehicle, item,
+												x, z, jump);
+										Bukkit.getPluginManager().callEvent(event);
+									}
+								});
 							}
 						}
 					}
@@ -286,12 +247,7 @@ public class JetpackMain extends JavaPlugin {
 	public boolean isGasCylinderItem(ItemStack item) {
 		if (item != null && item.getType().equals(gasCylinderItem.getType())
 				&& item.getItemMeta().getDisplayName().equals(gasCylinderItem.getItemMeta().getDisplayName())) {
-			ItemMeta meta = item.getItemMeta();
-			PersistentDataContainer data = meta.getPersistentDataContainer();
-
-			if (data.has(new NamespacedKey(this, "power"), PersistentDataType.FLOAT)) {
-				return true;
-			}
+			return true;
 		}
 		return false;
 	}
